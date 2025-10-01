@@ -3,39 +3,38 @@ name: Update Music List
 on:
   push:
     paths:
-      - '**.m4a'
+      - '**.m4a'  # 确保路径模式匹配你的文件结构[citation:2]
     branches: [ main, master ]
 
 jobs:
   update-list:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write  # 确保对仓库内容有写入权限
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
+        fetch-depth: 0  # 获取所有历史记录，有助于git diff
 
     - name: Update music list
       run: |
-        # 查找所有的m4a文件，按字母顺序排序，并写入list.txt
+        # 生成新的列表文件
         find . -name "*.m4a" -type f | sed 's|^./||' | sort > list.txt
-        
-        # 显示生成的内容（用于调试）
-        echo "Generated list.txt content:"
+        echo "当前 list.txt 内容:"
         cat list.txt
 
     - name: Commit and push if changed
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
-        # 检查是否有变化
-        if git diff --quiet; then
-          echo "No changes to commit"
+        # 检查list.txt是否有变化，或者是否有其他更改需要提交
+        if git diff --quiet -- list.txt; then
+          echo "list.txt 文件内容没有检测到变化。"
         else
           git add list.txt
-          git commit -m "Update music list"
+          git commit -m "自动更新音乐列表"
           git push
+          echo "已提交并推送更改。"
         fi
