@@ -1,0 +1,41 @@
+name: Update Music List
+
+on:
+  push:
+    paths:
+      - '**.m4a'
+    branches: [ main, master ]
+
+jobs:
+  update-list:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Update music list
+      run: |
+        # 查找所有的m4a文件，按字母顺序排序，并写入list.txt
+        find . -name "*.m4a" -type f | sed 's|^./||' | sort > list.txt
+        
+        # 显示生成的内容（用于调试）
+        echo "Generated list.txt content:"
+        cat list.txt
+
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # 检查是否有变化
+        if git diff --quiet; then
+          echo "No changes to commit"
+        else
+          git add list.txt
+          git commit -m "Update music list"
+          git push
+        fi
